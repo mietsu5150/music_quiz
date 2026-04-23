@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>おんぷクイズ🎵</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f0f8ff;
+  transition: 0.3s;
+}
+h1 { font-size: 28px; }
+#quiz {
+  font-size: 70px;
+  margin: 20px;
+}
+button {
+  font-size: 18px;
+  padding: 12px;
+  margin: 8px;
+  border-radius: 10px;
+  border: none;
+  background: #87cefa;
+  width: 80%;
+  max-width: 300px;
+}
+#result { font-size: 24px; margin: 15px; }
+#score { font-size: 22px; }
+#celebration {
+  font-size: 40px;
+  color: gold;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎵 おんぷクイズ 🎵</h1>
+<p>これはなんのおんぷかな？</p>
+
+<div id="quiz"></div>
+<div id="choices"></div>
+<div id="result"></div>
+<div id="score"></div>
+<div id="celebration">🏆 パーフェクト！！ 🎉</div>
+
+<button onclick="startGame()">もういちどあそぶ</button>
+
+<script>
+
+// 🔊 Audio
+let audioCtx;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playCorrect() {
+  initAudio();
+  const osc1 = audioCtx.createOscillator();
+  const gain1 = audioCtx.createGain();
+  osc1.frequency.value = 880;
+  osc1.connect(gain1);
+  gain1.connect(audioCtx.destination);
+  gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  gain1.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+  osc1.start();
+  osc1.stop(audioCtx.currentTime + 0.3);
+
+  setTimeout(() => {
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.frequency.value = 1200;
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    gain2.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc2.start();
+    osc2.stop(audioCtx.currentTime + 0.4);
+  }, 150);
+}
+
+function playWrong() {
+  initAudio();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.value = 200;
+  osc.type = "square";
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.5);
+}
+
+// ✅ 問題を10問以上に増やす
+const allQuestions = [
+  {symbol:"𝅝", answer:"ぜんおんぷ"},
+  {symbol:"𝅗𝅥", answer:"にぶおんぷ"},
+  {symbol:"♩", answer:"しぶおんぷ"},
+  {symbol:"♪", answer:"はちぶおんぷ"},
+  {symbol:"𝄼", answer:"にぶきゅうふ"},
+  {symbol:"𝄻", answer:"ぜんきゅうふ"},
+  {symbol:"𝄽", answer:"しぶきゅうふ"},
+  {symbol:"𝄾", answer:"はちぶきゅうふ"},
+  {symbol:"𝅘𝅥𝅯", answer:"じゅうろくぶおんぷ"},
+  {symbol:"𝄿", answer:"じゅうろくぶきゅうふ"}
+];
+
+let quiz = [];
+let current = 0;
+let score = 0;
+const TOTAL = 10;
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function startGame() {
+  quiz = shuffle([...allQuestions]).slice(0, TOTAL);
+  current = 0;
+  score = 0;
+  document.getElementById("celebration").style.display = "none";
+  loadQuiz();
+}
+
+function loadQuiz() {
+  document.getElementById("result").innerText = "";
+  document.getElementById("score").innerText = `もんだい ${current+1} / ${TOTAL}`;
+
+  const q = quiz[current];
+  document.getElementById("quiz").innerText = q.symbol;
+
+  let choices = shuffle(allQuestions.map(q=>q.answer)).slice(0,3);
+  if (!choices.includes(q.answer)) choices[0] = q.answer;
+
+  const choicesDiv = document.getElementById("choices");
+  choicesDiv.innerHTML = "";
+
+  choices.forEach(choice => {
+    const btn = document.createElement("button");
+    btn.innerText = choice;
+
+    btn.onclick = () => {
+      if (choice === quiz[current].answer) {
+        document.getElementById("result").innerText = "⭕ せいかい！";
+        playCorrect();
+        score++;
+      } else {
+        document.getElementById("result").innerText = "❌ ちがうよ！";
+        playWrong();
+      }
+
+      current++;
+
+      if (current < TOTAL) {
+        setTimeout(loadQuiz, 1000);
+      } else {
+        setTimeout(showResult, 1000);
+      }
+    };
+
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function showResult() {
+  document.getElementById("quiz").innerText = "おしまい🎉";
+  document.getElementById("choices").innerHTML = "";
+
+  // ✅ 10/10 表示
+  document.getElementById("result").innerText = `けっか：${score} / ${TOTAL}`;
+  document.getElementById("score").innerText = `${score} / ${TOTAL}`;
+
+  if (score === TOTAL) {
+    document.body.style.background = "#fffacd";
+    document.getElementById("celebration").style.display = "block";
+  }
+}
+
+startGame();
+
+</script>
+
+</body>
+</html>
